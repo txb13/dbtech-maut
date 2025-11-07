@@ -86,7 +86,24 @@ public class MautVerwaltungImpl implements IMautVerwaltung {
 	@Override
 	public void registerVehicle(long fz_id, int sskl_id, int nutzer_id, String kennzeichen, String fin, int achsen,
 			int gewicht, String zulassungsland) {
-		// TODO Auto-generated method stub
+		final String sql = "INSERT INTO FAHRZEUG " + "(FZ_ID, SSKL_ID, NUTZER_ID, KENNZEICHEN, FIN, ACHSEN, GEWICHT, ZULASSUNGSLAND)" + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, SYSDATE)";
+        try(PreparedStatement ps = getConnection().prepareStatement(sql)){
+            ps.setLong(1,fz_id);
+            ps.setInt(2, sskl_id);
+            ps.setInt(3, nutzer_id);
+            ps.setString(4, kennzeichen);
+            ps.setString(5, fin);
+            ps.setInt(6, achsen);
+            ps.setInt(7, gewicht);
+            ps.setString(8, zulassungsland);
+            int affected = ps.executeUpdate();
+            if (affected != 1){
+                throw new RuntimeException("registerVehicle: insert affected " + affected + " rows (expected 1)");
+            }
+            L.info("Fahrzeug {} ({}) registriert.", fz_id,kennzeichen);
+        }catch (SQLException e){
+            throw new RuntimeException("registerVehicle failed for fz_id=" + fz_id,e);
+        }
 
 	}
 

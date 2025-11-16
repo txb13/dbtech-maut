@@ -36,8 +36,6 @@ public class MautVerwaltungImpl implements IMautVerwaltung {
 
 	@Override
 	public String getStatusForOnBoardUnit(long fzg_id) {
-		// TODO Auto-generated method stub
-
 		PreparedStatement preparedstatement = null;
 		ResultSet resultSet = null;
 		String query = "SELECT STATUS FROM FAHRZEUGGERAT WHERE FZG_ID = ?";
@@ -107,16 +105,80 @@ public class MautVerwaltungImpl implements IMautVerwaltung {
 
     }
 
+
 	@Override
 	public void updateStatusForOnBoardUnit(long fzg_id, String status) {
-		// TODO Auto-generated method stub
+		PreparedStatement preparedStatement = null;
+		String query = "UPDATE FAHRZEUGGERAT SET STATUS = ? WHERE FZG_ID = ?";
 
+		try {
+			preparedStatement = getConnection().prepareStatement(query);
+			preparedStatement.setString(1, status);
+			preparedStatement.setLong(2, fzg_id);
+
+			int updatedRows = preparedStatement.executeUpdate();
+			if (updatedRows == 0) {
+				throw new RuntimeException("Kein Fahrzeuggerät mit der ID " + fzg_id + " gefunden.");
+			}
+
+		} catch (SQLException exp) {
+			throw new RuntimeException(exp);
+		} catch (NullPointerException exp) {
+			throw new RuntimeException(exp);
+		}
 	}
 
 	@Override
 	public void deleteVehicle(long fz_id) {
-		// TODO Auto-generated method stub
+		final String deleteMaut =
+				"DELETE FROM MAUTERHEBUNG " +
+						"WHERE FZG_ID IN (SELECT FZG_ID FROM FAHRZEUGGERAT WHERE FZ_ID = ?)";
+		final String deleteGeraet =
+				"DELETE FROM FAHRZEUGGERAT WHERE FZ_ID = ?";
+		final String deleteFzg =
+				"DELETE FROM FAHRZEUG WHERE FZ_ID = ?";
 
+		boolean oldAuto = true;
+		try {
+			Connection con = getConnection();          // wirft DataException, falls Connection fehlt
+			oldAuto = con.getAutoCommit();
+			con.setAutoCommit(false);                   // Transaktion starten
+
+			try (PreparedStatement ps = con.prepareStatement(deleteMaut)) {
+				ps.setLong(1, fz_id);
+				ps.executeUpdate();
+			}
+			try (PreparedStatement ps = con.prepareStatement(deleteGeraet)) {
+				ps.setLong(1, fz_id);
+				ps.executeUpdate();
+			}
+
+			int affected;
+			try (PreparedStatement ps = con.prepareStatement(deleteFzg)) {
+				ps.setLong(1, fz_id);
+				affected = ps.executeUpdate();
+			}
+			if (affected == 0) {
+				// Fahrzeug gab es nicht – Test 5 prüft das nicht direkt,
+				// aber sauberes Fehlersignal ist sinnvoll:
+				throw new DataException("Fahrzeug nicht gefunden: FZ_ID=" + fz_id);
+			}
+
+			con.commit();
+			L.info("Fahrzeug gelöscht: FZ_ID={}", fz_id);
+		} catch (Exception e) {
+			try {
+				getConnection().rollback();
+			} catch (Exception ignore) {
+			}
+			L.error("deleteVehicle failed fz_id={}", fz_id, e);
+			throw new DataException("Fehler beim Löschen des Fahrzeugs", e);
+		} finally {
+			try {
+				getConnection().setAutoCommit(oldAuto);
+			} catch (Exception ignore) {
+			}
+		}
 	}
 
 	@Override

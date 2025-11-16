@@ -3,10 +3,12 @@ Nutzer
 Schadstoffklasse
 Mautkategorie
 Rechnunngsstatus
+Zahltyp
+Zahlart
+Buchungstatus
 Fahrzeug
 Fahrzeuggerat
 Mauterhebung
-Buchungstatus
+Rechnung
 Buchung
-Zahltyp
-Zahlart
+Position

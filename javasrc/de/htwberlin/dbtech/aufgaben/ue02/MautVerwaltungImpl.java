@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -83,10 +84,10 @@ public class MautVerwaltungImpl implements IMautVerwaltung {
 		return nutzer_id;
 	}
 
-	@Override
-	public void registerVehicle(long fz_id, int sskl_id, int nutzer_id, String kennzeichen, String fin, int achsen,
-			int gewicht, String zulassungsland) {
-		final String sql = "INSERT INTO FAHRZEUG " + "(FZ_ID, SSKL_ID, NUTZER_ID, KENNZEICHEN, FIN, ACHSEN, GEWICHT, ZULASSUNGSLAND)" + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, SYSDATE)";
+    @Override
+    public void registerVehicle(long fz_id, int sskl_id, int nutzer_id, String kennzeichen, String fin, int achsen,
+                                int gewicht, String zulassungsland) {
+        final String sql = "INSERT INTO FAHRZEUG " + "(FZ_ID, SSKL_ID, NUTZER_ID, KENNZEICHEN, FIN, ACHSEN, GEWICHT, ZULASSUNGSLAND, ANMELDEDATUM)" + "VALUES (?, ?, ?, ?, ?, ?, ?, ?, SYSDATE)";
         try(PreparedStatement ps = getConnection().prepareStatement(sql)){
             ps.setLong(1,fz_id);
             ps.setInt(2, sskl_id);
@@ -100,12 +101,11 @@ public class MautVerwaltungImpl implements IMautVerwaltung {
             if (affected != 1){
                 throw new RuntimeException("registerVehicle: insert affected " + affected + " rows (expected 1)");
             }
-            L.info("Fahrzeug {} ({}) registriert.", fz_id,kennzeichen);
         }catch (SQLException e){
             throw new RuntimeException("registerVehicle failed for fz_id=" + fz_id,e);
         }
 
-	}
+    }
 
 	@Override
 	public void updateStatusForOnBoardUnit(long fzg_id, String status) {
@@ -121,8 +121,29 @@ public class MautVerwaltungImpl implements IMautVerwaltung {
 
 	@Override
 	public List<Mautabschnitt> getTrackInformations(String abschnittstyp) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+        final String sql = "SELECT ABSCHNITTS_ID, LAENGE, START_KOORDINATE, ZIEL_KOORDINATE, NAME, ABSCHNITTSTYP "+"FROM MAUTABSCHNITT "+"WHERE ABSCHNITTSTYP = ? " +"ORDER BY ABSCHNITTS_ID";
+        List<Mautabschnitt> result = new ArrayList<>();
+
+        try (PreparedStatement ps = getConnection().prepareStatement(sql)){
+            ps.setString(1, abschnittstyp);
+            try (ResultSet rs = ps.executeQuery()){
+                while (rs.next()){
+                    Mautabschnitt m = new Mautabschnitt();
+                    m.setAbschnitts_id(rs.getInt("ABSCHNITTS_ID"));
+                    m.setLaenge(rs.getInt("LAENGE"));
+                    m.setStart_koordinate(rs.getString("START_KOORDINATE"));
+                    m.setZiel_koordinate(rs.getString("ZIEL_KOORDINATE"));
+                    m.setName(rs.getString("NAME"));
+                    m.setAbschnittstyp(rs.getString("ABSCHNITTSTYP"));
+                    result.add(m);
+                }
+
+            }
+
+        }catch (SQLException e){
+            throw new RuntimeException("getTrackinformations failed for abschnittstyp= " + abschnittstyp, e);
+        }
+        return result;
+    }
 
 }

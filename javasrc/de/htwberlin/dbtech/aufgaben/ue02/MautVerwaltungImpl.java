@@ -35,8 +35,6 @@ public class MautVerwaltungImpl implements IMautVerwaltung {
 
 	@Override
 	public String getStatusForOnBoardUnit(long fzg_id) {
-		// TODO Auto-generated method stub
-
 		PreparedStatement preparedstatement = null;
 		ResultSet resultSet = null;
 		String query = "SELECT STATUS FROM FAHRZEUGGERAT WHERE FZG_ID = ?";
@@ -107,10 +105,27 @@ public class MautVerwaltungImpl implements IMautVerwaltung {
 
 	}
 
+
 	@Override
 	public void updateStatusForOnBoardUnit(long fzg_id, String status) {
-		// TODO Auto-generated method stub
+		PreparedStatement preparedStatement = null;
+		String query = "UPDATE FAHRZEUGGERAT SET STATUS = ? WHERE FZG_ID = ?";
 
+		try {
+			preparedStatement = getConnection().prepareStatement(query);
+			preparedStatement.setString(1, status);
+			preparedStatement.setLong(2, fzg_id);
+
+			int updatedRows = preparedStatement.executeUpdate();
+			if (updatedRows == 0) {
+				throw new RuntimeException("Kein Fahrzeuggerät mit der ID " + fzg_id + " gefunden.");
+			}
+
+		} catch (SQLException exp) {
+			throw new RuntimeException(exp);
+		} catch (NullPointerException exp) {
+			throw new RuntimeException(exp);
+		}
 	}
 
 	@Override

@@ -181,6 +181,7 @@ public class MautVerwaltungImpl implements IMautVerwaltung {
 		}
 	}
 
+
 	@Override
 	public List<Mautabschnitt> getTrackInformations(String abschnittstyp) {
         final String sql = "SELECT ABSCHNITTS_ID, LAENGE, START_KOORDINATE, ZIEL_KOORDINATE, NAME, ABSCHNITTSTYP "+"FROM MAUTABSCHNITT "+"WHERE ABSCHNITTSTYP = ? " +"ORDER BY ABSCHNITTS_ID";
